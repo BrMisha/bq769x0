@@ -102,7 +102,7 @@ impl<const X: usize> BQ769x0<X> where [(); X * 2]: Sized, [(); X * 4]: Sized {
             Err(Error::I2CError)
         }
     }
-/*
+
     pub fn new_detect<I2C>(i2c: &mut I2C, cell_count: u8) -> Option<Self>
         where I2C: embedded_hal::blocking::i2c::Write + embedded_hal::blocking::i2c::WriteRead
     {
@@ -118,7 +118,7 @@ impl<const X: usize> BQ769x0<X> where [(); X * 2]: Sized, [(); X * 4]: Sized {
             None
         }
     }
-*/
+
     pub fn i2c_address(&self) -> u8 {
         self.dev_address
     }
@@ -320,18 +320,37 @@ impl<const X: usize> BQ769x0<X> where [(); X * 2]: Sized, [(); X * 4]: Sized {
         Ok(&self.cells[..self.cell_count as usize])
     }
 
-    pub fn enable_balancing<I2C>(&mut self, i2c: &mut I2C, cells: u8) -> Result<(), Error>
+    pub fn enable_balancing<I2C>(&mut self, i2c: &mut I2C, cells: u16) -> Result<(), Error>
         where I2C: embedded_hal::blocking::i2c::Write + embedded_hal::blocking::i2c::WriteRead
     {
-        self.write_raw(i2c, 0x01, &[cells])
+        self.write_raw(i2c, 0x01, &[(cells & 0b11111) as u8])?;
+        if self.cell_count > 5 {
+            self.write_raw(i2c, 0x02, &[((cells >> 5) & 0b11111) as u8])?;
+        }
+        if self.cell_count > 10 {
+            self.write_raw(i2c, 0x03, &[((cells >> 10) & 0b11111) as u8])?;
+        }
+
+        Ok(())
     }
 
-    pub fn balancing_state<I2C>(&mut self, i2c: &mut I2C) -> Result<u8, Error>
+    pub fn balancing_state<I2C>(&mut self, i2c: &mut I2C) -> Result<u16, Error>
         where I2C: embedded_hal::blocking::i2c::Write + embedded_hal::blocking::i2c::WriteRead
     {
         let mut data = [0u8; 1];
         self.read_raw(i2c, 0x01, &mut data)?;
-        Ok(data[0])
+        let mut val = data[0] as u16;
+
+        if self.cell_count > 5 {
+            self.read_raw(i2c, 0x02, &mut data)?;
+            val |= (data[0] as u16) << 5;
+        }
+        if self.cell_count > 10 {
+            self.read_raw(i2c, 0x03, &mut data)?;
+            val |= (data[0] as u16) << 10;
+        }
+
+        Ok(val)
     }
 
     pub fn current<I2C>(&mut self, i2c: &mut I2C) -> Result<util::MilliAmperes, Error>
