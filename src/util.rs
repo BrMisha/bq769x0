@@ -376,12 +376,20 @@ impl OVDelay {
 
 pub struct Config {
     pub shunt: MicroOhms,
+
+    // Short Circuit in Discharge
     pub scd_delay: SCDDelay,
     pub scd_threshold: Amperes,
+
+    // Overcurrent in Discharge
     pub ocd_delay: OCDDelay,
     pub ocd_threshold: Amperes,
+
+    // Undervoltage
     pub uv_delay: UVDelay,
     pub uv_threshold: MilliVolts,
+
+    // Overvoltage
     pub ov_delay: OVDelay,
     pub ov_threshold: MilliVolts,
 }
@@ -389,10 +397,10 @@ pub struct Config {
 #[derive(Debug)]
 pub struct CalculatedValues {
     pub ocdscd_range_used: OCDSCDRange,
-    pub scd_threshold: Amperes,
-    pub ocd_threshold: Amperes,
-    pub uv_threshold: MilliVolts,
-    pub ov_threshold: MilliVolts
+    pub scd_threshold: Amperes, // Short Circuit in Discharge
+    pub ocd_threshold: Amperes, // Overcurrent in Discharge
+    pub uv_threshold: MilliVolts,   // Undervoltage
+    pub ov_threshold: MilliVolts    // Overvoltage
 }
 
 #[derive(Copy, Clone)]

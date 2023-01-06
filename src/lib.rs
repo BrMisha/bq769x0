@@ -3,7 +3,7 @@
 #![feature(generic_const_exprs)]
 #![feature(const_panic)]
 
-mod util;
+pub mod util;
 
 use core::fmt;
 use core::fmt::Formatter;
