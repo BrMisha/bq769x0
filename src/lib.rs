@@ -4,6 +4,7 @@
 #![feature(const_panic)]
 
 pub mod util;
+mod registers;
 
 use crc_any::CRCu8;
 

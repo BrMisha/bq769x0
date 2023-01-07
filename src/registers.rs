@@ -1,0 +1,60 @@
+pub const SYS_STAT: u8 = 0x00;
+pub const CELLBAL1: u8 = 0x01;
+pub const CELLBAL2: u8 = 0x02;
+pub const CELLBAL3: u8 = 0x03;
+pub const SYS_CTRL1: u8 = 0x04;
+pub const SYS_CTRL2: u8 = 0x05;
+pub const PROTECT1: u8 = 0x06;
+pub const PROTECT2: u8 = 0x07;
+pub const PROTECT3: u8 = 0x08;
+pub const OV_TRIP: u8 = 0x09;
+pub const UV_TRIP: u8 = 0x0A;
+pub const CC_CFG: u8 = 0x0B;
+
+pub const VC1_HI_BYTE: u8 = 0x0C;
+pub const VC1_LO_BYTE: u8 = 0x0D;
+pub const VC2_HI_BYTE: u8 = 0x0E;
+pub const VC2_LO_BYTE: u8 = 0x0F;
+pub const VC3_HI_BYTE: u8 = 0x10;
+pub const VC3_LO_BYTE: u8 = 0x11;
+pub const VC4_HI_BYTE: u8 = 0x12;
+pub const VC4_LO_BYTE: u8 = 0x13;
+pub const VC5_HI_BYTE: u8 = 0x14;
+pub const VC5_LO_BYTE: u8 = 0x15;
+pub const VC6_HI_BYTE: u8 = 0x16;
+pub const VC6_LO_BYTE: u8 = 0x17;
+pub const VC7_HI_BYTE: u8 = 0x18;
+pub const VC7_LO_BYTE: u8 = 0x19;
+pub const VC8_HI_BYTE: u8 = 0x1A;
+pub const VC8_LO_BYTE: u8 = 0x1B;
+pub const VC9_HI_BYTE: u8 = 0x1C;
+pub const VC9_LO_BYTE: u8 = 0x1D;
+pub const VC10_HI_BYTE: u8 = 0x1E;
+pub const VC10_LO_BYTE: u8 = 0x1F;
+pub const VC11_HI_BYTE: u8 = 0x20;
+pub const VC11_LO_BYTE: u8 = 0x21;
+pub const VC12_HI_BYTE: u8 = 0x22;
+pub const VC12_LO_BYTE: u8 = 0x23;
+pub const VC13_HI_BYTE: u8 = 0x24;
+pub const VC13_LO_BYTE: u8 = 0x25;
+pub const VC14_HI_BYTE: u8 = 0x26;
+pub const VC14_LO_BYTE: u8 = 0x27;
+pub const VC15_HI_BYTE: u8 = 0x28;
+pub const VC15_LO_BYTE: u8 = 0x29;
+
+pub const BAT_HI_BYTE: u8 = 0x2A;
+pub const BAT_LO_BYTE: u8 = 0x2B;
+
+pub const TS1_HI_BYTE: u8 = 0x2C;
+pub const TS1_LO_BYTE: u8 = 0x2D;
+pub const TS2_HI_BYTE: u8 = 0x2E;
+pub const TS2_LO_BYTE: u8 = 0x2F;
+pub const TS3_HI_BYTE: u8 = 0x30;
+pub const TS3_LO_BYTE: u8 = 0x31;
+
+pub const CC_HI_BYTE: u8 = 0x32;
+pub const CC_LO_BYTE: u8 = 0x33;
+
+pub const ADCGAIN1: u8 = 0x50;
+pub const ADCOFFSET: u8 = 0x51;
+pub const ADCGAIN2: u8 = 0x59;
