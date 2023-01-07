@@ -305,8 +305,8 @@ where
     {
         let mut gain1_offset = [0u8; 2];
         let mut gain2 = [0u8; 1];
-        self.read_raw(i2c, 0x50, &mut gain1_offset)?;
-        self.read_raw(i2c, 0x59, &mut gain2)?;
+        self.read_raw(i2c, registers::ADCGAIN1, &mut gain1_offset)?;
+        self.read_raw(i2c, registers::ADCGAIN2, &mut gain2)?;
         self.adc_gain = 365 + (((gain1_offset[0] << 1) & 0b0001_1000) | (gain2[0] >> 5)) as u16;
         self.adc_offset = gain1_offset[1] as i8;
 
@@ -325,7 +325,7 @@ where
             return Err(Error::Uninitialized);
         }
         let mut buf = [0u8; X * 2];
-        self.read_raw(i2c, 0x0c, &mut buf)?;
+        self.read_raw(i2c, registers::VC1_HI_BYTE, &mut buf)?;
         let adc_tf = self.adc_transfer_function();
         for (i, cell) in self.cells.iter_mut().enumerate() {
             let adc_reading = ((buf[i * 2] as u16) << 8) | buf[i * 2 + 1] as u16;
@@ -365,12 +365,12 @@ where
     where
         I2C: embedded_hal::blocking::i2c::Write + embedded_hal::blocking::i2c::WriteRead,
     {
-        self.write_raw(i2c, 0x01, &[(cells & 0b11111) as u8])?;
+        self.write_raw(i2c, registers::CELLBAL1, &[(cells & 0b11111) as u8])?;
         if self.cell_count > 5 {
-            self.write_raw(i2c, 0x02, &[((cells >> 5) & 0b11111) as u8])?;
+            self.write_raw(i2c, registers::CELLBAL2, &[((cells >> 5) & 0b11111) as u8])?;
         }
         if self.cell_count > 10 {
-            self.write_raw(i2c, 0x03, &[((cells >> 10) & 0b11111) as u8])?;
+            self.write_raw(i2c, registers::CELLBAL3, &[((cells >> 10) & 0b11111) as u8])?;
         }
 
         Ok(())
@@ -381,15 +381,15 @@ where
         I2C: embedded_hal::blocking::i2c::Write + embedded_hal::blocking::i2c::WriteRead,
     {
         let mut data = [0u8; 1];
-        self.read_raw(i2c, 0x01, &mut data)?;
+        self.read_raw(i2c, registers::CELLBAL1, &mut data)?;
         let mut val = data[0] as u16;
 
         if self.cell_count > 5 {
-            self.read_raw(i2c, 0x02, &mut data)?;
+            self.read_raw(i2c, registers::CELLBAL2, &mut data)?;
             val |= (data[0] as u16) << 5;
         }
         if self.cell_count > 10 {
-            self.read_raw(i2c, 0x03, &mut data)?;
+            self.read_raw(i2c, registers::CELLBAL3, &mut data)?;
             val |= (data[0] as u16) << 10;
         }
 
@@ -406,7 +406,7 @@ where
         // self.write_raw(i2c, 0x05, &sys_ctrl2)?;
         // delay(8_000_000);
         let mut cc = [0u8; 2];
-        self.read_raw(i2c, 0x32, &mut cc)?;
+        self.read_raw(i2c, registers::CC_HI_BYTE, &mut cc)?;
         let cc = i16::from_be_bytes(cc);
         let vshunt = cc as i32 * 8440; // nV
         let current = vshunt / self.shunt.0 as i32;
@@ -423,7 +423,7 @@ where
         // self.write_raw(i2c, 0x05, &sys_ctrl2)?;
         // delay(8_000_000);
         let mut vv = [0u8; 2];
-        self.read_raw(i2c, 0x2a, &mut vv)?;
+        self.read_raw(i2c, registers::BAT_HI_BYTE, &mut vv)?;
         let vv = u16::from_be_bytes(vv);
         let voltage =
             4 * (self.adc_gain as i32) * (vv as i32) + 5 * (self.adc_offset as i32) * 1000;
@@ -435,7 +435,7 @@ where
         I2C: embedded_hal::blocking::i2c::Write + embedded_hal::blocking::i2c::WriteRead,
     {
         let mut ts = [0u8; 2];
-        self.read_raw(i2c, 0x2c, &mut ts)?;
+        self.read_raw(i2c, registers::TS1_HI_BYTE, &mut ts)?;
         let ts = u16::from_be_bytes(ts);
         let vtsx = (ts as i32) * 382; // µV/LSB
         match self.temperature_source(i2c)? {
@@ -464,7 +464,7 @@ where
         I2C: embedded_hal::blocking::i2c::Write + embedded_hal::blocking::i2c::WriteRead,
     {
         let mut data = [0u8; 1];
-        self.read_raw(i2c, 0x00, &mut data)?;
+        self.read_raw(i2c, registers::SYS_STAT, &mut data)?;
         Ok(util::Stat { bits: data[0] })
     }
 
@@ -472,7 +472,7 @@ where
     where
         I2C: embedded_hal::blocking::i2c::Write + embedded_hal::blocking::i2c::WriteRead,
     {
-        self.write_raw(i2c, 0x00, &[flags.bits()])
+        self.write_raw(i2c, registers::SYS_STAT, &[flags.bits()])
     }
 
     pub fn discharge<I2C>(&mut self, i2c: &mut I2C, enable: bool) -> Result<(), Error>
@@ -480,7 +480,7 @@ where
         I2C: embedded_hal::blocking::i2c::Write + embedded_hal::blocking::i2c::WriteRead,
     {
         let mut sys_ctrl2 = [0u8; 1];
-        self.read_raw(i2c, 0x05, &mut sys_ctrl2)?;
+        self.read_raw(i2c, registers::SYS_CTRL2, &mut sys_ctrl2)?;
         let already_enabled = sys_ctrl2[0] & 0b0000_0010 != 0;
         if enable == already_enabled {
             return Ok(());
@@ -490,7 +490,7 @@ where
         } else {
             sys_ctrl2[0] &= !0b0000_0010;
         }
-        self.write_raw(i2c, 0x05, &sys_ctrl2)
+        self.write_raw(i2c, registers::SYS_CTRL2, &sys_ctrl2)
     }
 
     pub fn charge<I2C>(&mut self, i2c: &mut I2C, enable: bool) -> Result<(), Error>
@@ -498,7 +498,7 @@ where
         I2C: embedded_hal::blocking::i2c::Write + embedded_hal::blocking::i2c::WriteRead,
     {
         let mut sys_ctrl2 = [0u8; 1];
-        self.read_raw(i2c, 0x05, &mut sys_ctrl2)?;
+        self.read_raw(i2c, registers::SYS_CTRL2, &mut sys_ctrl2)?;
         let already_enabled = sys_ctrl2[0] & 0b0000_0001 != 0;
         if enable == already_enabled {
             return Ok(());
@@ -508,7 +508,7 @@ where
         } else {
             sys_ctrl2[0] &= !0b0000_0001;
         }
-        self.write_raw(i2c, 0x05, &sys_ctrl2)
+        self.write_raw(i2c, registers::SYS_CTRL2, &sys_ctrl2)
     }
 
     pub fn is_charge_enabled<I2C>(&mut self, i2c: &mut I2C) -> Result<bool, Error>
@@ -516,7 +516,7 @@ where
         I2C: embedded_hal::blocking::i2c::Write + embedded_hal::blocking::i2c::WriteRead,
     {
         let mut sys_ctrl2 = [0u8; 1];
-        self.read_raw(i2c, 0x05, &mut sys_ctrl2)?;
+        self.read_raw(i2c, registers::SYS_CTRL2, &mut sys_ctrl2)?;
         Ok(sys_ctrl2[0] & 0b0000_0001 != 0)
     }
 
@@ -524,9 +524,9 @@ where
     where
         I2C: embedded_hal::blocking::i2c::Write + embedded_hal::blocking::i2c::WriteRead,
     {
-        self.write_raw(i2c, 0x04, &[0b0000_0000])?;
-        self.write_raw(i2c, 0x04, &[0b0000_0001])?;
-        self.write_raw(i2c, 0x04, &[0b0000_0010])?;
+        self.write_raw(i2c, registers::SYS_CTRL1, &[0b0000_0000])?;
+        self.write_raw(i2c, registers::SYS_CTRL1, &[0b0000_0001])?;
+        self.write_raw(i2c, registers::SYS_CTRL1, &[0b0000_0010])?;
         Ok(())
     }
 
@@ -617,14 +617,14 @@ where
         regs[4] = uv_bits; // (0xA)
         regs[5] = 0x19; // (0xB)
 
-        self.write_raw(i2c, 0x06, &regs)?;
+        self.write_raw(i2c, registers::PROTECT1, &regs)?;
         self.shunt = config.shunt;
         self.init_complete = true;
 
         let mut sysctrl2 = [0u8; 1];
-        self.read_raw(i2c, 0x05, &mut sysctrl2)?;
+        self.read_raw(i2c, registers::SYS_CTRL2, &mut sysctrl2)?;
         sysctrl2[0] |= 0b0100_0000; // !!CC_EN!!
-        self.write_raw(i2c, 0x05, &sysctrl2)?;
+        self.write_raw(i2c, registers::SYS_CTRL2, &sysctrl2)?;
 
         Ok(util::CalculatedValues {
             ocdscd_range_used: range_to_use,
@@ -644,10 +644,10 @@ where
         I2C: embedded_hal::blocking::i2c::Write + embedded_hal::blocking::i2c::WriteRead,
     {
         let mut sysctrl1 = [0u8; 1];
-        self.read_raw(i2c, 0x04, &mut sysctrl1)?;
+        self.read_raw(i2c, registers::SYS_CTRL1, &mut sysctrl1)?;
         sysctrl1[0] &= !(1 << 4);
         sysctrl1[0] |= (enable as u8) << 4;
-        self.write_raw(i2c, 0x04, &sysctrl1)
+        self.write_raw(i2c, registers::SYS_CTRL1, &sysctrl1)
     }
 
     pub fn set_temperature_source<I2C>(
@@ -659,11 +659,11 @@ where
         I2C: embedded_hal::blocking::i2c::Write + embedded_hal::blocking::i2c::WriteRead,
     {
         let mut sysctrl1 = [0u8; 1];
-        self.read_raw(i2c, 0x04, &mut sysctrl1)?;
+        self.read_raw(i2c, registers::SYS_CTRL1, &mut sysctrl1)?;
         sysctrl1[0] &= !(1 << 3);
         let is_external = source == util::TemperatureSource::ExternalThermistor;
         sysctrl1[0] |= (is_external as u8) << 3;
-        self.write_raw(i2c, 0x04, &sysctrl1)
+        self.write_raw(i2c, registers::SYS_CTRL1, &sysctrl1)
     }
 
     pub fn temperature_source<I2C>(
@@ -674,7 +674,7 @@ where
         I2C: embedded_hal::blocking::i2c::Write + embedded_hal::blocking::i2c::WriteRead,
     {
         let mut sysctrl1 = [0u8; 1];
-        self.read_raw(i2c, 0x04, &mut sysctrl1)?;
+        self.read_raw(i2c, registers::SYS_CTRL1, &mut sysctrl1)?;
         sysctrl1[0] &= !(1 << 3);
         let is_external = sysctrl1[0] & (1 << 3) != 0;
         if is_external {
@@ -693,7 +693,7 @@ where
         I2C: embedded_hal::blocking::i2c::Write + embedded_hal::blocking::i2c::WriteRead,
     {
         let mut sysctrl2 = [0u8; 1];
-        self.read_raw(i2c, 0x05, &mut sysctrl2)?;
+        self.read_raw(i2c, registers::SYS_CTRL2, &mut sysctrl2)?;
         sysctrl2[0] &= !0b0110_0000;
         match mode {
             util::CoulombCounterMode::Disabled => {}
@@ -704,7 +704,7 @@ where
                 sysctrl2[0] |= 1 << 6;
             }
         }
-        self.write_raw(i2c, 0x05, &sysctrl2)
+        self.write_raw(i2c, registers::SYS_CTRL2, &sysctrl2)
     }
 }
 
