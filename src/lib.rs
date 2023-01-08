@@ -1,10 +1,9 @@
 #![cfg_attr(not(std), no_std)]
 #![feature(adt_const_params)]
 #![feature(generic_const_exprs)]
-#![feature(const_panic)]
 
 pub mod util;
-mod registers;
+pub mod registers;
 
 use crc_any::CRCu8;
 
