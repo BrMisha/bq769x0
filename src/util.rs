@@ -512,3 +512,23 @@ bitflags::bitflags! {
         const ALL           = 0b1011_1111;
     }
 }
+
+bitflags::bitflags! {
+    pub struct SysCtrl1: u8 {
+        const LOAD_PRESENT = 1 << 7;
+        const ADC_EN = 1 << 4;
+        const TEMP_SEL = 1 << 3;
+        const SHUT_A = 1 << 1;
+        const SHUT_B = 1 << 0;
+    }
+}
+
+bitflags::bitflags! {
+    pub struct SysCtrl2: u8 {
+        const DELAY_DIS = 1 << 7;
+        const CC_EN = 1 << 6;
+        const CC_ONESHOT = 1 << 5;
+        const DSG_ON = 1 << 1;
+        const CHG_ON = 1 << 0;
+    }
+}

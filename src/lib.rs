@@ -480,16 +480,26 @@ where
     {
         let mut sys_ctrl2 = [0u8; 1];
         self.read_raw(i2c, registers::SYS_CTRL2, &mut sys_ctrl2)?;
-        let already_enabled = sys_ctrl2[0] & 0b0000_0010 != 0;
+        let mut sys_ctrl2 = util::SysCtrl2::from_bits_truncate(sys_ctrl2[0]);
+
+        let already_enabled = sys_ctrl2.contains(util::SysCtrl2::DSG_ON);
         if enable == already_enabled {
             return Ok(());
         }
-        if enable {
-            sys_ctrl2[0] |= 0b0000_0010;
-        } else {
-            sys_ctrl2[0] &= !0b0000_0010;
-        }
-        self.write_raw(i2c, registers::SYS_CTRL2, &sys_ctrl2)
+        sys_ctrl2.set(util::SysCtrl2::DSG_ON, enable);
+
+        self.write_raw(i2c, registers::SYS_CTRL2, &[sys_ctrl2.bits()])
+    }
+
+    pub fn is_discharge_enabled<I2C>(&mut self, i2c: &mut I2C) -> Result<bool, Error>
+        where
+            I2C: embedded_hal::blocking::i2c::Write + embedded_hal::blocking::i2c::WriteRead,
+    {
+        let mut sys_ctrl2 = [0u8; 1];
+        self.read_raw(i2c, registers::SYS_CTRL2, &mut sys_ctrl2)?;
+        let sys_ctrl2 = util::SysCtrl2::from_bits_truncate(sys_ctrl2[0]);
+
+        Ok(sys_ctrl2.contains(util::SysCtrl2::DSG_ON))
     }
 
     pub fn charge<I2C>(&mut self, i2c: &mut I2C, enable: bool) -> Result<(), Error>
@@ -498,16 +508,15 @@ where
     {
         let mut sys_ctrl2 = [0u8; 1];
         self.read_raw(i2c, registers::SYS_CTRL2, &mut sys_ctrl2)?;
-        let already_enabled = sys_ctrl2[0] & 0b0000_0001 != 0;
+        let mut sys_ctrl2 = util::SysCtrl2::from_bits_truncate(sys_ctrl2[0]);
+
+        let already_enabled = sys_ctrl2.contains(util::SysCtrl2::CHG_ON);
         if enable == already_enabled {
             return Ok(());
         }
-        if enable {
-            sys_ctrl2[0] |= 0b0000_0001;
-        } else {
-            sys_ctrl2[0] &= !0b0000_0001;
-        }
-        self.write_raw(i2c, registers::SYS_CTRL2, &sys_ctrl2)
+        sys_ctrl2.set(util::SysCtrl2::CHG_ON, enable);
+
+        self.write_raw(i2c, registers::SYS_CTRL2, &[sys_ctrl2.bits()])
     }
 
     pub fn is_charge_enabled<I2C>(&mut self, i2c: &mut I2C) -> Result<bool, Error>
@@ -516,7 +525,9 @@ where
     {
         let mut sys_ctrl2 = [0u8; 1];
         self.read_raw(i2c, registers::SYS_CTRL2, &mut sys_ctrl2)?;
-        Ok(sys_ctrl2[0] & 0b0000_0001 != 0)
+        let sys_ctrl2 = util::SysCtrl2::from_bits_truncate(sys_ctrl2[0]);
+
+        Ok(sys_ctrl2.contains(util::SysCtrl2::CHG_ON))
     }
 
     pub fn ship_enter<I2C>(&mut self, i2c: &mut I2C) -> Result<(), Error>
