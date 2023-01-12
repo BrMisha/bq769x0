@@ -254,7 +254,7 @@ where
         I2C: embedded_hal::blocking::i2c::Write + embedded_hal::blocking::i2c::WriteRead,
     {
         //#[cfg(no_std)] {
-        cortex_m::asm::delay(10000);
+        //cortex_m::asm::delay(10000000);
         //}
 
         if data.len() > 8 {
@@ -458,13 +458,14 @@ where
         // }
     }
 
-    pub fn sys_stat<I2C>(&mut self, i2c: &mut I2C) -> Result<util::Stat, Error>
+    pub fn sys_stat<I2C>(&mut self, i2c: &mut I2C) -> Result<util::SysStat, Error>
     where
         I2C: embedded_hal::blocking::i2c::Write + embedded_hal::blocking::i2c::WriteRead,
     {
         let mut data = [0u8; 1];
         self.read_raw(i2c, registers::SYS_STAT, &mut data)?;
-        Ok(util::Stat { bits: data[0] })
+        Ok(util::SysStat::from_bits_truncate(data[0]))
+        //Ok(util::Stat { bits: data[0] })
     }
 
     pub fn sys_stat_reset<I2C>(&mut self, i2c: &mut I2C, flags: util::SysStat) -> Result<(), Error>

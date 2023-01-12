@@ -1,7 +1,7 @@
 use core::fmt;
 use core::fmt::Formatter;
 use serde::{Deserialize, Serialize};
-
+/*
 pub struct Stat {
     pub(crate) bits: u8,
 }
@@ -32,7 +32,6 @@ impl Stat {
     pub fn is_ok(&self) -> bool {
         self.bits & 0b0011_1111 == 0
     }
-}
 
 impl fmt::Debug for Stat {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -61,6 +60,7 @@ impl fmt::Debug for Stat {
         write!(f, ")")
     }
 }
+}*/
 
 pub enum SCDDelay {
     _70uS,
@@ -488,13 +488,13 @@ pub enum CoulombCounterMode {
     Continuous,
 }
 
-#[derive(Eq, PartialEq, Copy, Clone)]
+#[derive(Eq, PartialEq, Copy, Clone, Debug)]
 pub enum TemperatureSource {
     InternalDie,
     ExternalThermistor,
 }
 
-#[derive(Eq, PartialEq, Copy, Clone)]
+#[derive(Eq, PartialEq, Copy, Clone, Debug)]
 pub enum Temperature {
     InternalDie(DegreesCentigrade),
     ExternalThermistor(DegreesCentigrade),
@@ -511,6 +511,34 @@ bitflags::bitflags! {
         const OVERCURRENT   = 0b0000_0001;
         const ALL           = 0b1011_1111;
     }
+}
+
+impl SysStat {
+    /*pub fn cc_ready_is_set(&self) -> bool {
+        self.contains(SysStat::CC_READY)
+    }
+    pub fn device_xready_is_set(&self) -> bool {
+        self.contains(SysStat::DEVICE_XREADY)
+    }
+    pub fn ovrd_alert_is_set(&self) -> bool {
+        self.contains(SysStat::OVRD_ALERT)
+    }
+    pub fn undervoltage_is_set(&self) -> bool {
+        self.contains(SysStat::UNDERVOLTAGE)
+    }
+    pub fn overvoltage_is_set(&self) -> bool {
+        self.contains(SysStat::OVERVOLTAGE)
+    }
+    pub fn scd_is_set(&self) -> bool {
+        self.contains(SysStat::SHORTCIRCUIT)
+    }
+    pub fn ocd_is_set(&self) -> bool {
+        self.contains(SysStat::OVERCURRENT)
+    }
+
+    pub fn is_ok(&self) -> bool {
+        self.bits & 0b0011_1111 == 0
+    }*/
 }
 
 bitflags::bitflags! {
