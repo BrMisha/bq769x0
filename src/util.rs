@@ -117,7 +117,7 @@ impl fmt::Display for MilliVolts {
         write!(f, "{}mV", self.0)
     }
 }
-
+/*
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub struct DegreesCentigrade(pub i32);
 
@@ -125,6 +125,13 @@ impl fmt::Display for DegreesCentigrade {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}degC", self.0)
     }
+}*/
+
+#[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
+pub enum TemperatureChannel {
+    _1,
+    _2,
+    _3,
 }
 
 #[derive(Copy, Clone)]
@@ -493,12 +500,12 @@ pub enum TemperatureSource {
     InternalDie,
     ExternalThermistor,
 }
-
+/*
 #[derive(Eq, PartialEq, Copy, Clone, Debug)]
 pub enum Temperature {
     InternalDie(DegreesCentigrade),
     ExternalThermistor(DegreesCentigrade),
-}
+}*/
 
 bitflags::bitflags! {
     pub struct SysStat: u8 {

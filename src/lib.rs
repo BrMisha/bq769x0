@@ -2,9 +2,10 @@
 #![feature(adt_const_params)]
 #![feature(generic_const_exprs)]
 
-pub mod util;
 pub mod registers;
+pub mod util;
 
+use crate::util::TemperatureChannel;
 use crc_any::CRCu8;
 
 pub const BQ76920: usize = 5;
@@ -429,22 +430,27 @@ where
         Ok(util::MilliVolts((voltage / 1000) as u32))
     }
 
-    pub fn temperature<I2C>(&mut self, i2c: &mut I2C) -> Result<util::Temperature, Error>
+    pub fn temperature<I2C>(
+        &mut self,
+        i2c: &mut I2C,
+        channel: util::TemperatureChannel,
+    ) -> Result<i32, Error>
     where
         I2C: embedded_hal::blocking::i2c::Write + embedded_hal::blocking::i2c::WriteRead,
     {
         let mut ts = [0u8; 2];
-        self.read_raw(i2c, registers::TS1_HI_BYTE, &mut ts)?;
+        self.read_raw(
+            i2c,
+            match channel {
+                TemperatureChannel::_1 => registers::TS1_HI_BYTE,
+                TemperatureChannel::_2 => registers::TS2_HI_BYTE,
+                TemperatureChannel::_3 => registers::TS3_HI_BYTE,
+            },
+            &mut ts,
+        )?;
         let ts = u16::from_be_bytes(ts);
         let vtsx = (ts as i32) * 382; // µV/LSB
-        match self.temperature_source(i2c)? {
-            util::TemperatureSource::InternalDie => Ok(util::Temperature::InternalDie(
-                util::DegreesCentigrade(vtsx),
-            )),
-            util::TemperatureSource::ExternalThermistor => Ok(
-                util::Temperature::ExternalThermistor(util::DegreesCentigrade(vtsx)),
-            ),
-        }
+        Ok(vtsx)
         // match source {
         //     TemperatureSource::InternalDie => {
         //         let v25 = 1200000; // µV at 25degC
@@ -493,8 +499,8 @@ where
     }
 
     pub fn is_discharge_enabled<I2C>(&mut self, i2c: &mut I2C) -> Result<bool, Error>
-        where
-            I2C: embedded_hal::blocking::i2c::Write + embedded_hal::blocking::i2c::WriteRead,
+    where
+        I2C: embedded_hal::blocking::i2c::Write + embedded_hal::blocking::i2c::WriteRead,
     {
         let mut sys_ctrl2 = [0u8; 1];
         self.read_raw(i2c, registers::SYS_CTRL2, &mut sys_ctrl2)?;
@@ -661,7 +667,7 @@ where
         self.write_raw(i2c, registers::SYS_CTRL1, &sysctrl1)
     }
 
-    pub fn set_temperature_source<I2C>(
+    pub fn set_temperature1_source<I2C>(
         &mut self,
         i2c: &mut I2C,
         source: util::TemperatureSource,
@@ -677,7 +683,7 @@ where
         self.write_raw(i2c, registers::SYS_CTRL1, &sysctrl1)
     }
 
-    pub fn temperature_source<I2C>(
+    pub fn temperature1_source<I2C>(
         &mut self,
         i2c: &mut I2C,
     ) -> Result<util::TemperatureSource, Error>
