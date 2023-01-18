@@ -5,7 +5,7 @@
 pub mod registers;
 pub mod util;
 
-use crate::util::TemperatureChannel;
+use crate::util::{SysCtrl1, TemperatureChannel};
 use crc_any::CRCu8;
 
 pub const BQ76920: usize = 5;
@@ -434,7 +434,7 @@ where
         &mut self,
         i2c: &mut I2C,
         channel: util::TemperatureChannel,
-    ) -> Result<i32, Error>
+    ) -> Result<f32, Error>
     where
         I2C: embedded_hal::blocking::i2c::Write + embedded_hal::blocking::i2c::WriteRead,
     {
@@ -449,19 +449,8 @@ where
             &mut ts,
         )?;
         let ts = u16::from_be_bytes(ts);
-        let vtsx = (ts as i32) * 382; // µV/LSB
-        Ok(vtsx)
-        // match source {
-        //     TemperatureSource::InternalDie => {
-        //         let v25 = 1200000; // µV at 25degC
-        //         let t = 25 - ((vtsx - v25) * 238);
-        //         Ok(DegreesCentigrade( t as i16 ))
-        //     }
-        //     TemperatureSource::ExternalThermistor => {
-        //         // let rts = (10_000 * vtsx)
-        //         Ok(DegreesCentigrade(0))
-        //     }
-        // }
+        let vtsx = (ts as f32) * 382.0; // uV
+        Ok(vtsx / 1000000.0) // to volts
     }
 
     pub fn sys_stat<I2C>(&mut self, i2c: &mut I2C) -> Result<util::SysStat, Error>
@@ -677,10 +666,9 @@ where
     {
         let mut sysctrl1 = [0u8; 1];
         self.read_raw(i2c, registers::SYS_CTRL1, &mut sysctrl1)?;
-        sysctrl1[0] &= !(1 << 3);
-        let is_external = source == util::TemperatureSource::ExternalThermistor;
-        sysctrl1[0] |= (is_external as u8) << 3;
-        self.write_raw(i2c, registers::SYS_CTRL1, &sysctrl1)
+        let mut sysctrl1 = util::SysCtrl1::from_bits_truncate(sysctrl1[0]);
+        sysctrl1.set(SysCtrl1::TEMP_SEL, source == util::TemperatureSource::ExternalThermistor);
+        self.write_raw(i2c, registers::SYS_CTRL1, &[sysctrl1.bits()])
     }
 
     pub fn temperature1_source<I2C>(
@@ -692,13 +680,11 @@ where
     {
         let mut sysctrl1 = [0u8; 1];
         self.read_raw(i2c, registers::SYS_CTRL1, &mut sysctrl1)?;
-        sysctrl1[0] &= !(1 << 3);
-        let is_external = sysctrl1[0] & (1 << 3) != 0;
-        if is_external {
-            Ok(util::TemperatureSource::ExternalThermistor)
-        } else {
-            Ok(util::TemperatureSource::InternalDie)
-        }
+        let sysctrl1 = util::SysCtrl1::from_bits_truncate(sysctrl1[0]);
+        Ok(match sysctrl1.contains(SysCtrl1::TEMP_SEL) {
+            false => util::TemperatureSource::InternalDie,
+            true => util::TemperatureSource::ExternalThermistor,
+        })
     }
 
     pub fn coulomb_counter_mode<I2C>(
